@@ -4,12 +4,15 @@ import requests
 import argparse
 
 from logging import (getLogger, basicConfig)
-from auth import Authenticate
+from interface import implements
+
+from pyhole_interface import PyHoleInterface
+
 
 logger = getLogger()
 
 
-class PyHole(object):
+class PyHole(implements(PyHoleInterface)):
 	"""Python wrapper for Pihole"""
 
 	def __init__(self, ip_address, loglevel):
