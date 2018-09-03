@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+
 import time
 import hashlib
 import requests
 import argparse
 
+from yaml import (load, YAMLError)
 from logging import (getLogger, basicConfig)
 from interface import implements
 
@@ -15,78 +18,13 @@ logger = getLogger()
 class PyHole(implements(PyHoleInterface)):
 	"""Python wrapper for Pihole"""
 
-	def __init__(self, ip_address, loglevel):
+	def __init__(self, ip_address):
 		"""initialise ip address, api-baseurl, authenicate-data"""
-
-		basicConfig(level=loglevel)
 
 		self.ip_address = ip_address
 		self.api_baseurl = "http://" + self.ip_address + "/admin/api.php"
 		self._auth = None
 		self.do_refresh()
-
-	def do_refresh(self):
-		"""Refresh all stats"""
-
-		stats_json = requests.get(self.api_baseurl + "?summary")
-
-		self.status = stats_json["status"]
-		self.domain_count = stats_json["domains_being_blocked"]
-		self.queries = stats_json["dns_queries_today"]
-		self.blocked = stats_json["ads_blocked_today"]
-		self.ads_percentage = stats_json["ads_percentage_today"]
-		self.unique_domains = stats_json["unique_domains"]
-		self.forwarded = stats_json["queries_forwarded"]
-		self.cached = stats_json["queries_cached"]
-		self.total_clients = stats_json["clients_ever_seen"]
-		self.unique_clients = stats_json["unique_clients"]
-		self.total_queries = stats_json["dns_queries_all_types"]
-		self.gravity_last_updated = stats_json["gravity_last_updated"]
-		
-
-	def top_clients(self, entries=10):
-		"""data needed for generating the top clients list"""
-		
-		if self._auth != None:
-			top_clients_data = requests.get( self.api_baseurl + "?getQuerySources=" + str(entries) + "&auth=" + self.token).json()
-			self.top_devices = topdevicedata["top_sources"]
-			
-			return self.top_devices
-		return False
-
-	
-	def get_query_types(self):
-		"""return number of queries that Pi-hole’s DNS server has processed"""			
-		
-		if self._auth != None:
-			raw_data = requests.get(self.api_baseurl + "?getQueryTypes&auth=" + self.token).json()
-			
-			if self._version == "2":
-				self.query_types = raw_data
-			else:
-				self.query_types = raw_data["querytypes"]
-			return self.querytypes
-		return False
-
-	def get_forward_destinations(self):
-		"""returns number of queries that have been forwarded and the target"""
-
-		if self._auth != None:
-			raw_data = requests.get(self.api_baseurl + "?getForwardDestinations&auth=" + self.token).json()
-			
-			if self._version == "2":
-				self.forward_destinations = raw_data["forward_destinations"]
-			else:
-				self.forward_destinations = raw_data
-			return self.forward_destinations
-		return False
-
-
-	def get_recent_blocked(self):
-		"""return most recently blocked domain"""
-
-		raw_data = requests.get(self.api_baseurl + "?recentBlocked")
-		return raw_data.text
 
 
 	def get_pihole_token(self, password):
@@ -128,6 +66,32 @@ class PyHole(implements(PyHoleInterface)):
 		# {"status":"disabled"}
 		return requests.get(self.api_baseurl + "?disable="+ str(time_limit) +"&auth=" + self.token).json()
 
+
+	def get_version(self):
+		"""return version of pi-hole API: authentication not necessary!"""
+		
+		return requests.get(self.api_baseurl + "?versions").json()
+
+
+	def do_refresh(self):
+		"""Refresh all stats"""
+
+		stats_json = requests.get(self.api_baseurl + "?summary")
+
+		self.status = stats_json["status"]
+		self.domain_count = stats_json["domains_being_blocked"]
+		self.queries = stats_json["dns_queries_today"]
+		self.blocked = stats_json["ads_blocked_today"]
+		self.ads_percentage = stats_json["ads_percentage_today"]
+		self.unique_domains = stats_json["unique_domains"]
+		self.forwarded = stats_json["queries_forwarded"]
+		self.cached = stats_json["queries_cached"]
+		self.total_clients = stats_json["clients_ever_seen"]
+		self.unique_clients = stats_json["unique_clients"]
+		self.total_queries = stats_json["dns_queries_all_types"]
+		self.gravity_last_updated = stats_json["gravity_last_updated"]
+		
+
 	def add_to_list(self, domains_list, domain):
 		"""adding domain to list"""
 
@@ -165,6 +129,7 @@ class PyHole(implements(PyHoleInterface)):
 
 		return True
 
+
 	def get_list(self, list_type):
 		"""return list of blocked types: list_type"""
 
@@ -172,6 +137,7 @@ class PyHole(implements(PyHoleInterface)):
 		domains_list = requests.get(get_api + "?list=" + str(list_type)).json()
 		
 		return domains_list
+
 
 	def refresh_top_items(self, entries):
 		"""
@@ -194,6 +160,7 @@ class PyHole(implements(PyHoleInterface)):
 
 		return top_items
 
+
 	def get_graph_data(self):
 		"""return graph of domains/ads over time"""
 
@@ -205,6 +172,7 @@ class PyHole(implements(PyHoleInterface)):
 		}
 
 		return stats
+
 
 	def get_all_DNS_queries_data(self):
 		"""returns dict as DNS queries data"""
@@ -245,17 +213,71 @@ class PyHole(implements(PyHoleInterface)):
 		return stats_data
 
 
-
-	def get_version(self):
-		"""return version of pi-hole API: authentication not necessary!"""
+	def top_clients(self, entries=10):
+		"""data needed for generating the top clients list"""
 		
-		return requests.get(self.api_baseurl + "?versions").json()
+		if self._auth != None:
+			top_clients_data = requests.get( self.api_baseurl + "?getQuerySources=" + str(entries) + "&auth=" + self.token).json()
+			self.top_devices = topdevicedata["top_sources"]
+			
+			return self.top_devices
+		return False
+
+
+	def get_query_types(self):
+		"""return number of queries that Pi-hole’s DNS server has processed"""			
+		
+		if self._auth != None:
+			raw_data = requests.get(self.api_baseurl + "?getQueryTypes&auth=" + self.token).json()
+			
+			if self._version == "2":
+				self.query_types = raw_data
+			else:
+				self.query_types = raw_data["querytypes"]
+			return self.querytypes
+		return False
+
+
+	def get_forward_destinations(self):
+		"""returns number of queries that have been forwarded and the target"""
+
+		if self._auth != None:
+			raw_data = requests.get(self.api_baseurl + "?getForwardDestinations&auth=" + self.token).json()
+			
+			if self._version == "2":
+				self.forward_destinations = raw_data["forward_destinations"]
+			else:
+				self.forward_destinations = raw_data
+			return self.forward_destinations
+		return False
+
+
+	def get_recent_blocked(self):
+		"""return most recently blocked domain"""
+
+		raw_data = requests.get(self.api_baseurl + "?recentBlocked")
+		return raw_data.text
+
 
 
 
 if __name__=="__main__":
-	parser = argparse.ArgumentParser(description='Pihole wrapper')
-    parser.add_argument('-ll', '--loglevel', help='Set the logging level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'])
+	parser = argparse.ArgumentParser(description='PyHole: Python wrapper for Pi-hole')
+	
+	parser.add_argument('-uc', '--useconfig', help='Use the _config file', action="store_true")
+	parser.add_argument('-ip','--ipaddress', help='Use this ip-address', type=str)
+    parser.add_argument('-l', '--loglevel', help='Set the logging level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'])
     args = parser.parse_args()
+    
     logging.basicConfig(level=args.loglevel)
-        
+    
+    if args.useconfig:
+		with open("_config.yml", 'r') as stream:
+		    try:
+		        yml_data = load(stream)
+		    except YAMLError as exc:
+		        logger.ERROR(exc)
+		  
+	    hole = PyHole(yml_data['IP_address'])
+	elif args.ipaddress:
+		hole = PyHole(args.ip_address)
