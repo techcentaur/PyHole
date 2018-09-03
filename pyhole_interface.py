@@ -1,28 +1,8 @@
 from interface import Interface
 
 class PyHoleInterface(Interface):
-	def __init__(self, ip_address, loglevel):
+	def __init__(self, ip_address):
 		"""initialise ip address, api-baseurl, authenicate-data"""
-		pass
-
-	def do_refresh(self):
-		"""Refresh all stats"""
-		pass
-
-	def top_clients(self, entries):
-		"""data needed for generating the top clients list"""
-		pass
-	
-	def get_query_types(self):
-		"""return number of queries that Pi-hole’s DNS server has processed"""			
-		pass
-
-	def get_forward_destinations(self):
-		"""returns number of queries that have been forwarded and the target"""
-		pass
-
-	def get_recent_blocked(self):
-		"""return most recently blocked domain"""
 		pass
 
 	def get_pihole_token(self, password):
@@ -39,6 +19,14 @@ class PyHoleInterface(Interface):
 
 	def disable_pihole(self, time_limit):
 		"""disable pihole in time_limit(in seconds)"""
+		pass
+
+	def get_version(self):
+		"""return version of pi-hole API: authentication not necessary!"""
+		pass
+
+	def do_refresh(self):
+		"""Refresh all stats"""
 		pass
 
 	def add_to_list(self, domains_list, domain):
@@ -68,6 +56,19 @@ class PyHoleInterface(Interface):
 		"""returns dict as DNS queries data"""
 		pass
 
-	def get_version(self):
-		"""return version of pi-hole API: authentication not necessary!"""
+
+	def top_clients(self, entries):
+		"""data needed for generating the top clients list"""
+		pass
+	
+	def get_query_types(self):
+		"""return number of queries that Pi-hole’s DNS server has processed"""			
+		pass
+
+	def get_forward_destinations(self):
+		"""returns number of queries that have been forwarded and the target"""
+		pass
+
+	def get_recent_blocked(self):
+		"""return most recently blocked domain"""
 		pass
